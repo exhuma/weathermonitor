@@ -167,7 +167,3 @@ def main():
         output.put(data)
         print(as_csv(data))
         sleep(60 * 15)
-
-
-if __name__ == "__main__":
-    main()

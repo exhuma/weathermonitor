@@ -4,7 +4,7 @@ setup(
     name="weathermonitor",
     version="1.0.1",
     description="Simple weather-monitor for Zigbee/Phoscon sensors",
-    url='https://github.com/exhuma/config_resolver',
+    url="https://github.com/exhuma/config_resolver",
     author="Michel Albert",
     author_email="michel@albert.lu",
     license="MIT",
@@ -16,5 +16,6 @@ setup(
         "python-dateutil",
         "gouge",
         "influxdb_client",
-    ]
+        "python-dotenv",
+    ],
 )
