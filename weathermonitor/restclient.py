@@ -5,7 +5,7 @@ from datetime import datetime
 from io import StringIO
 from os import getenv
 from pathlib import Path
-from typing import Any, Dict, Generator
+from typing import Any, Dict, Generator, Optional
 
 import pytz
 import requests
@@ -18,6 +18,12 @@ LOG = logging.getLogger(__name__)
 Simple.basicConfig(level=logging.INFO)
 UTC = pytz.timezone("UTC")
 Lux = pytz.timezone("Europe/Luxembourg")
+
+
+def maybe_float(value: Optional[str]) -> Optional[float]:
+    if value is None or value == "":
+        return None
+    return float(value)
 
 
 class Client:
@@ -72,13 +78,15 @@ class Client:
             sensordata = sensorstates.setdefault(row["name"], {})
             naive = parse(row["state"]["lastupdated"])
             sensordata["lastupdated"] = UTC.localize(naive)
-            sensordata["battery"] = row["config"]["battery"]
+            sensordata["battery"] = maybe_float(row["config"]["battery"])
             if row["type"] == "ZHAHumidity":
-                sensordata["humidity"] = row["state"]["humidity"] / 100
+                sensordata["humidity"] = maybe_float(row["state"]["humidity"] / 100)
             elif row["type"] == "ZHATemperature":
-                sensordata["temperature"] = row["state"]["temperature"] / 100
+                sensordata["temperature"] = maybe_float(
+                    row["state"]["temperature"] / 100
+                )
             elif row["type"] == "ZHAPressure":
-                sensordata["pressure"] = row["state"]["pressure"]
+                sensordata["pressure"] = maybe_float(row["state"]["pressure"])
         return sensorstates
 
 
@@ -132,10 +140,10 @@ class InfluxOutput:
             point = (
                 Point("climate")
                 .tag("sensor", sensor_name)
-                .field("battery", float(values["battery"]))
-                .field("temperature", float(values["temperature"]))
-                .field("humidity", float(values["humidity"]))
-                .field("pressure", float(values["pressure"]))
+                .field("battery", values["battery"])
+                .field("temperature", values["temperature"])
+                .field("humidity", values["humidity"])
+                .field("pressure", values["pressure"])
                 .time(datetime.utcnow(), WritePrecision.NS)
             )
             write_api.write(self.bucket, self.org, point)
