@@ -27,11 +27,13 @@ def maybe_float(value: Optional[str]) -> Optional[float]:
 
 
 class Client:
-    def __init__(self, url: str = "", auth_file_name: str = "") -> None:
-        self.url = getenv("PHOSCON_URL", url)
+    def __init__(self, url: str, auth_file_name: str) -> None:
+        self.url = url
         if url == "":
             raise ValueError("URL cannot be empty!")
-        self.auth_file_name = getenv("PHOSCON_AUTH_FILENAME", auth_file_name)
+        self.auth_file_name = auth_file_name
+        if auth_file_name == "":
+            raise ValueError("Auth-File cannot be empty!")
         self.key = ""
 
     def login(self) -> None:
@@ -156,7 +158,7 @@ def main():
 
     load_dotenv(".env")
 
-    client = Client("http://192.168.178.43:8888", "auth/auth.json")
+    client = Client(getenv("PHOSCON_URL"), getenv("PHOSCON_AUTH_FILENAME"))
     client.login()
     output = InfluxOutput()
 
