@@ -163,7 +163,10 @@ def main():
     output = InfluxOutput()
 
     while True:
-        data = client.get_weather()
-        output.put(data)
-        print(as_csv(data))
+        try:
+            data = client.get_weather()
+            output.put(data)
+            print(as_csv(data))
+        except Exception as exc:
+            LOG.error("Unable to retrieve weather data: %s", exc)
         sleep(60 * 15)
