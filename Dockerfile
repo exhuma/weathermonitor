@@ -1,4 +1,5 @@
 FROM python:3-slim
-ADD dist/weathermonitor-1.0.1-py3-none-any.whl /
-RUN pip install /weathermonitor-1.0.1-py3-none-any.whl
+ARG DISTFILE
+ADD dist/${DISTFILE} /
+RUN pip install /${DISTFILE}
 ENTRYPOINT [ "python3", "-m", "weathermonitor" ]
