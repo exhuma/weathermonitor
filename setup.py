@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="weathermonitor",
-    version="1.0.2",
+    version="1.0.3",
     description="Simple weather-monitor for Zigbee/Phoscon sensors",
     url="https://github.com/exhuma/config_resolver",
     author="Michel Albert",
