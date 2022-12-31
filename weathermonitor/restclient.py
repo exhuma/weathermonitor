@@ -1,6 +1,7 @@
 import csv
 import json
 import logging
+import sys
 from datetime import datetime
 from io import StringIO
 from os import getenv
@@ -157,8 +158,25 @@ def main():
     from dotenv import load_dotenv
 
     load_dotenv(".env")
+    errors = []
+    phoscon_url = getenv("PHOSCON_URL", "")
+    if not phoscon_url:
+        errors.append(
+            "Environment variable PHOSCON_URL must be set and non-empty"
+        )
 
-    client = Client(getenv("PHOSCON_URL"), getenv("PHOSCON_AUTH_FILENAME"))
+    auth_filename = getenv("PHOSCON_AUTH_FILENAME", "")
+    if not phoscon_url:
+        errors.append(
+            "Environment variable PHOSCON_AUTH_FILENAME must be set "
+            "and non-empty"
+        )
+    if errors:
+        for error in errors:
+            print(error, file=sys.stderr)
+        sys.exit(1)
+
+    client = Client(phoscon_url, auth_filename)
     client.login()
     output = InfluxOutput()
 
