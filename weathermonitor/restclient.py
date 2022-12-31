@@ -79,8 +79,13 @@ class Client:
             if row["modelid"] != "lumi.weather":
                 continue
             sensordata = sensorstates.setdefault(row["name"], {})
-            naive = parse(row["state"]["lastupdated"])
-            sensordata["lastupdated"] = UTC.localize(naive)
+            lastupdated = row["state"]["lastupdated"]
+            if not lastupdated:
+                LOG.error("No field 'lastupdated' found in %r", row["state"])
+                sensordata["lastupdated"] = datetime.utcnow(tz=UTC)
+            else:
+                naive = parse(last_updated)
+                sensordata["lastupdated"] = UTC.localize(naive)
             sensordata["battery"] = maybe_float(row["config"]["battery"])
             if row["type"] == "ZHAHumidity":
                 sensordata["humidity"] = maybe_float(row["state"]["humidity"] / 100)
