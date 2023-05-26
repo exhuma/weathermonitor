@@ -88,7 +88,7 @@ class Client:
                 LOG.error("No field 'lastupdated' found in %r", row["state"])
                 sensordata["lastupdated"] = datetime.utcnow(tz=UTC)
             else:
-                naive = parse(last_updated)
+                naive = parse(lastupdated)
                 sensordata["lastupdated"] = UTC.localize(naive)
             sensordata["battery"] = maybe_float(row["config"]["battery"])
             if row["type"] == "ZHAHumidity":
