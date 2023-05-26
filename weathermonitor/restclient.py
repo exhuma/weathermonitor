@@ -16,7 +16,11 @@ from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 LOG = logging.getLogger(__name__)
-Simple.basicConfig(level=logging.INFO)
+Simple.basicConfig(
+    level=logging.INFO
+    if getenv("WEATHERMONITOR_DEBUG", None) is None
+    else logging.DEBUG
+)
 UTC = pytz.timezone("UTC")
 Lux = pytz.timezone("Europe/Luxembourg")
 
@@ -95,6 +99,7 @@ class Client:
                 )
             elif row["type"] == "ZHAPressure":
                 sensordata["pressure"] = maybe_float(row["state"]["pressure"])
+        LOG.debug("Sensor States: %r", sensorstates)
         return sensorstates
 
 
