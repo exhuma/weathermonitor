@@ -2,11 +2,12 @@ from fabric import task
 from os.path import basename
 from glob import glob
 
-IMAGE = "exhuma/weathermonitor"
+IMAGE = "weathermonitor"
 
 
 @task(help={"repo": "The domain-name of the docker registry to push to"})
-def build(ctx, repo):
+def build(ctx, repo=""):
+    repo = repo or ctx["docker"]["registry"]
     version = ctx.run("python3 setup.py --version").stdout.strip()
     ctx.run("rm -rf dist")
     ctx.run("python3 setup.py bdist_wheel", hide="stdout").stdout.strip()
@@ -24,7 +25,8 @@ def build(ctx, repo):
 
 
 @task(help={"repo": "The domain-name of the docker registry to push to"})
-def publish(ctx, repo):
+def publish(ctx, repo=""):
+    repo = repo or ctx["docker"]["registry"]
     version = ctx.run("python3 setup.py --version").stdout.strip()
     ctx.run(f"docker login {repo}", pty=True)
     try:
