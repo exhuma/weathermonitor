@@ -1,0 +1,30 @@
+---
+name: Build and Publish
+on:
+  push:
+    tags: ["v*"]
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Add dependencies
+        run: pip install yq
+      - name: Get Version
+        run: echo "PROJECT_VERSION=$(tomlq -r .project.version pyproject.toml)"
+             >> "${GITHUB_ENV}"
+      - name: Build Image
+        run: "docker build \
+              -t \"${{secrets.DOCKER_REGISTRY}}/\
+                   weathermonitor:${PROJECT_VERSION}\"
+              ."
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      - name: Log in to DO container Registry
+        run: doctl registry login --expiry-seconds 600
+      - name: Push
+        run: "docker push \"${{secrets.DOCKER_REGISTRY}}/\
+              weathermonitor:${PROJECT_VERSION}\""
