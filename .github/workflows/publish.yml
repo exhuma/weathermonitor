@@ -1,30 +1,73 @@
+# Required repository secrets:
+#
+#   DOCKER_REGISTRY          - Hostname of the container registry
+#                              e.g. registry.example.com
+#   DOCKER_REGISTRY_USER     - Login username for the registry
+#                              e.g. myuser
+#   DOCKER_REGISTRY_PASSWORD - Login password / token for the registry
+#                              e.g. s3cr3t
+#   DOCKER_REGISTRY_NAMESPACE - Namespace (project/org) within the registry
+#                              e.g. myorg
 ---
 name: Build and Publish
-on:
-  push:
-    tags: ["v*"]
+
+"on":
+  workflow_dispatch:
+  push: null
+
 jobs:
   build_and_push:
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') ||
+      github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Add dependencies
-        run: pip install yq
-      - name: Get Version
-        run: echo "PROJECT_VERSION=$(tomlq -r .project.version pyproject.toml)"
-             >> "${GITHUB_ENV}"
-      - name: Build Image
-        run: "docker build \
-              -t \"${{secrets.DOCKER_REGISTRY}}/\
-                   weathermonitor:${PROJECT_VERSION}\"
-              ."
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
+        uses: actions/checkout@v4
+
+      - name: Get version from pyproject.toml
+        run: |
+          echo "PROJECT_VERSION=$(python3 -c "
+          import tomllib, pathlib
+          data = tomllib.loads(pathlib.Path('pyproject.toml').read_text())
+          print(data['project']['version'])
+          ")" >> "${GITHUB_ENV}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to private Docker registry
+        uses: docker/login-action@v3
         with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-      - name: Log in to DO container Registry
-        run: doctl registry login --expiry-seconds 600
-      - name: Push
-        run: "docker push \"${{secrets.DOCKER_REGISTRY}}/\
-              weathermonitor:${PROJECT_VERSION}\""
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_REGISTRY_USER }}
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+
+      - name: Build and push (release tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: >-
+            ${{ secrets.DOCKER_REGISTRY }}/${{
+            secrets.DOCKER_REGISTRY_NAMESPACE
+            }}/weathermonitor:${{ env.PROJECT_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push (dev branch)
+        if: github.ref == 'refs/heads/develop'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: >-
+            ${{ secrets.DOCKER_REGISTRY }}/${{
+            secrets.DOCKER_REGISTRY_NAMESPACE
+            }}/weathermonitor:dev
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
